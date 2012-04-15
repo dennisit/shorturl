@@ -25,12 +25,7 @@
 
     <target name="copy">
         <copy todir="${deploy.dir}" encoding="utf-8">
-            <fileset dir="${web.dir}" excludes="**/*.jar,**/*.class,**/_test*.html,**/*.txt,**/messageResource.properties" />
-        </copy>
-        <copy todir="${deploy.dir}/WEB-INF/lib" encoding="utf-8">
-            <fileset dir="${basedir}/lib">
-                <include name="*.jar" />
-            </fileset>
+            <fileset dir="${web.dir}" excludes="**/*.class,**/_test*.html,**/*.txt,**/messageResource.properties" />
         </copy>
         <copy todir="${deploy.dir}/WEB-INF/lib" encoding="utf-8">
             <fileset file="${basedir}/sonicxp-url.jar"/>

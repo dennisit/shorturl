@@ -9,8 +9,6 @@ import info.sonicxp.shorturl.util.LRUCache;
 
 import java.sql.SQLException;
 
-import javax.annotation.PostConstruct;
-
 import org.apache.log4j.Logger;
 
 import twitter4j.Twitter;
@@ -30,14 +28,13 @@ public class TwitterService {
 
     private static final String consumerSecret = "6CKVrwQ8TH24LH4UFBwAyo3ykfA6sBrn9hxiIp4VqM";
 
-    private LRUCache<String, Pair<Twitter, String>> requestTokenCache;
+    private final LRUCache<String, Pair<Twitter, String>> requestTokenCache;
 
-    private LRUCache<String, Twitter> twitterInstanceCache;
+    private final LRUCache<String, Twitter> twitterInstanceCache;
 
-    private ShareDao shareDao;
+    private final ShareDao shareDao;
 
-    @PostConstruct
-    void init() {
+    public TwitterService() {
         twitterInstanceCache = new LRUCache<String, Twitter>(1000);
         requestTokenCache = new LRUCache<String, Pair<Twitter, String>>(1000);
         shareDao = DaoFactory.getShareDao();
