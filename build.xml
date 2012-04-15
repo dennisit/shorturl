@@ -1,0 +1,72 @@
+<project name="sonicxp" default="deploy" basedir=".">
+    <description>
+        for corp netease
+    </description>
+
+    <property name="src.dir" location="${basedir}/src" />
+    <property name="web.dir" location="${basedir}/war" />
+    <property name="deploy.dir" location="${basedir}/bin" />
+
+    <target name="init">
+        <delete dir="${deploy.dir}" />
+        <mkdir dir="${deploy.dir}" />
+        <delete dir="${basedir}/classes" />
+        <mkdir dir="${basedir}/classes" />
+    </target>
+
+    <path id="classpath">
+        <fileset dir="${basedir}/lib">
+            <include name="*.jar" />
+        </fileset>
+        <fileset dir="${web.dir}/WEB-INF/lib">
+          <include name="*.jar" />
+        </fileset>
+    </path>
+
+    <target name="copy">
+        <copy todir="${deploy.dir}" encoding="utf-8">
+            <fileset dir="${web.dir}" excludes="**/*.jar,**/*.class,**/_test*.html,**/*.txt,**/messageResource.properties" />
+        </copy>
+        <copy todir="${deploy.dir}/WEB-INF/lib" encoding="utf-8">
+            <fileset dir="${basedir}/lib">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+        <copy todir="${deploy.dir}/WEB-INF/lib" encoding="utf-8">
+            <fileset file="${basedir}/sonicxp-url.jar"/>
+        </copy>
+    </target>
+
+    <target name="compile-main" depends="init">
+        <javac srcdir="${src.dir}" destdir="${basedir}/classes" debug="true" debuglevel="lines,source" nowarn="true" encoding="UTF-8">
+            <classpath refid="classpath" />
+        </javac>
+    </target>
+
+    <target name="jarmainbin" depends="compile-main">
+        <jar jarfile="sonicxp-url.jar"  update="yes">
+            <fileset dir="${basedir}/classes" includes="**/*.*" />
+        </jar>
+    </target>
+
+    <target name="war">
+        <war warfile="sonicxp-url.war" basedir="${deploy.dir}">
+            <include name="**/*" />
+            <exclude name="**/build.xml" />
+            <exclude name="deploy/**" />
+        </war>
+    </target>
+
+    <target name="clean">
+        <delete dir="${deploy.dir}" />
+        <delete dir="${basedir}/classes" />
+    </target>
+
+    <target name="deploy">
+        <antcall target="jarmainbin" />
+        <antcall target="copy" />
+        <antcall target="war" />
+        <antcall target="clean" />
+    </target>
+
+</project>

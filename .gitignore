@@ -1,0 +1,6 @@
+.classpath
+.project
+.settings/
+sonicxp-url.jar
+sonicxp-url.war
+bin/
