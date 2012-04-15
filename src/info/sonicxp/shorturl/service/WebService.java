@@ -45,6 +45,8 @@ public class WebService extends HttpServlet {
 
     private final MessageFormat shareText = new MessageFormat("ShareLink: {0}");
 
+    private final String DEFAULT_HOST = "http://u.sonicxp.info";
+
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -170,7 +172,7 @@ public class WebService extends HttpServlet {
                 if (type == ShareType.TWITTER) {
                     if (twitterService.checkAuthorized(rw.getUid())) {
                         try {
-                            String url = path + "/" + sstr;
+                            String url = DEFAULT_HOST + path + "/" + sstr;
                             twitterService.updateStatus(rw.getUid(),
                                     shareText.format(new Object[] { url }));
                             rw.getLogger().info(logger, "Twitter share " + url);

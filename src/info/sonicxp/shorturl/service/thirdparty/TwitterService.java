@@ -41,13 +41,11 @@ public class TwitterService {
     }
 
     private Twitter getTwitterInstance(AccessToken accessToken) {
-        Twitter twitter;
-        if (accessToken == null) {
-            twitter = new TwitterFactory().getInstance();
-        } else {
-            twitter = new TwitterFactory().getInstance(accessToken);
-        }
+        Twitter twitter = new TwitterFactory().getInstance();
         twitter.setOAuthConsumer(consumerKey, consumerSecret);
+        if (accessToken != null) {
+            twitter.setOAuthAccessToken(accessToken);
+        }
         return twitter;
     }
 
