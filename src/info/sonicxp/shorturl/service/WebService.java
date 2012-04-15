@@ -1,6 +1,8 @@
 package info.sonicxp.shorturl.service;
 
 import info.sonicxp.shorturl.dao.DaoFactory;
+import info.sonicxp.shorturl.meta.ShareType;
+import info.sonicxp.shorturl.service.thirdparty.TwitterService;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -8,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -23,6 +26,8 @@ import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import twitter4j.TwitterException;
+
 /**
  * @author Sonic
  */
@@ -35,6 +40,10 @@ public class WebService extends HttpServlet {
     private final Map<String, Method> requestMapping = new HashMap<String, Method>();
 
     private String path;
+
+    private final TwitterService twitterService = new TwitterService();
+
+    private final MessageFormat shareText = new MessageFormat("ShareLink: {0}");
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -111,6 +120,7 @@ public class WebService extends HttpServlet {
     public String addUrl(RequestWrapper rw) {
         String orig = rw.getParameterOrig("url");
         String sstr = rw.getParameterOrig("short");
+        String share = rw.getParameter("share");
 
         if (orig == null) {
             return new JSONObject().element("code", 400)
@@ -148,8 +158,74 @@ public class WebService extends HttpServlet {
             }
         }
 
+        if (StringUtils.isNotBlank(share)) {
+            String[] parts = share.split(",");
+            for (String t: parts) {
+                ShareType type;
+                try {
+                    type = ShareType.valueOf(t.trim().toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    continue;
+                }
+                if (type == ShareType.TWITTER) {
+                    if (twitterService.checkAuthorized(rw.getUid())) {
+                        try {
+                            String url = path + "/" + sstr;
+                            twitterService.updateStatus(rw.getUid(),
+                                    shareText.format(new Object[] { url }));
+                            rw.getLogger().info(logger, "Twitter share " + url);
+                        } catch (TwitterException e) {
+                            rw.getLogger().error(logger,
+                                    "Update twitter message failed.", e);
+                        }
+                    }
+                }
+            }
+        }
         return new JSONObject().element("code", 200).element("short", sstr)
                 .toString();
+    }
+
+    /**
+     * 获取Twitter OAuth URL
+     * 
+     * @param rw
+     * @return
+     */
+    @RequestMapping("/!f/auth.do")
+    public String auth(RequestWrapper rw) {
+        String typestr = rw.getParameterSafe("type");
+        ShareType type;
+        try {
+            type = ShareType.valueOf(typestr.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return new JSONObject().element("code", 400)
+                    .element("msg", "wrong type").toString();
+        }
+
+        if (type == ShareType.TWITTER) {
+            try {
+                String authUrl = twitterService.getAuthorizeUrl(rw.getUid());
+                return new JSONObject().element("code", 200)
+                        .element("url", authUrl).toString();
+            } catch (TwitterException e) {
+                return new JSONObject().element("code", 500).toString();
+            }
+        } else {
+            return new JSONObject().element("code", 501)
+                    .element("msg", "unimplemented").toString();
+        }
+    }
+
+    @RequestMapping("/~auth/twitter.do")
+    public String authCallback(RequestWrapper rw) {
+        String oauth_token = rw.getParameterOrig("oauth_token");
+        try {
+            twitterService.afterAuthorized(oauth_token);
+            return new JSONObject().element("code", 200).toString();
+        } catch (TwitterException e) {
+            return new JSONObject().element("code", 500).toString();
+        }
     }
 
     private static final String shortKeys = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_~";

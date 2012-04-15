@@ -37,4 +37,8 @@ public class DaoFactory {
     public static UserDao getUserDao() {
         return new UserDao(getConnectDB());
     }
+
+    public static ShareDao getShareDao() {
+        return new ShareDao(getConnectDB());
+    }
 }
