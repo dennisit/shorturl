@@ -121,41 +121,53 @@ public class WebService extends HttpServlet {
         String orig = rw.getParameterOrig("url");
         String sstr = rw.getParameterOrig("short");
         String share = rw.getParameter("share");
-
+        // 检查参数
         if (orig == null) {
             return new JSONObject().element("code", 400).element("msg", "url can't be null").toString();
         }
-
         try {
             orig = URLDecoder.decode(orig, "UTF-8");
         } catch (UnsupportedEncodingException e) {
             rw.getLogger().error(logger, "add url failed", e);
             return new JSONObject().element("code", 500).toString();
         }
-
-        boolean genFlag = false;
-        if (sstr == null) {
-            genFlag = true;
-            sstr = generateRandomUrl();
-        }
-
+        // 检查是否存在
+        boolean exist = false;
         try {
-            DaoFactory.getUrlDao().setLongUrl(sstr, orig);
+            String dbShort = DaoFactory.getUrlDao().getShortUrl(orig);
+            if (dbShort != null) {
+                sstr = dbShort;
+                exist = true;
+            }
         } catch (SQLException e) {
-            // 可能是短Url重复，若自动生成则重试一次，否则返回错误
-            if (!genFlag) {
-                return new JSONObject().element("code", 400).element("msg", "duplicated short url").toString();
-            } else {
+            rw.getLogger().error(logger, "check exist failed", e);
+            return new JSONObject().element("code", 500).toString();
+        }
+        // 插入DB
+        if (!exist) {
+            boolean genFlag = false;
+            if (sstr == null) {
+                genFlag = true;
                 sstr = generateRandomUrl();
-                try {
-                    DaoFactory.getUrlDao().setLongUrl(sstr, orig);
-                } catch (SQLException e1) {
-                    rw.getLogger().error(logger, "add url failed", e1);
-                    return new JSONObject().element("code", 500).toString();
+            }
+            try {
+                DaoFactory.getUrlDao().setLongUrl(sstr, orig);
+            } catch (SQLException e) {
+                // 可能是短Url重复，若自动生成则重试一次，否则返回错误
+                if (!genFlag) {
+                    return new JSONObject().element("code", 400).element("msg", "duplicated short url").toString();
+                } else {
+                    sstr = generateRandomUrl();
+                    try {
+                        DaoFactory.getUrlDao().setLongUrl(sstr, orig);
+                    } catch (SQLException e1) {
+                        rw.getLogger().error(logger, "add url failed", e1);
+                        return new JSONObject().element("code", 500).toString();
+                    }
                 }
             }
         }
-
+        // 分享链接
         if (StringUtils.isNotBlank(share)) {
             String[] parts = share.split(",");
             for (String t : parts) {
@@ -178,7 +190,12 @@ public class WebService extends HttpServlet {
                 }
             }
         }
-        return new JSONObject().element("code", 200).element("short", sstr).toString();
+        // 返回数据
+        JSONObject result = new JSONObject().element("code", 200).element("short", sstr);
+        if (exist) {
+            result.element("exist", true);
+        }
+        return result.toString();
     }
 
     /**
