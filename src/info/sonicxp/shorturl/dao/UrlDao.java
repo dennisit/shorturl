@@ -22,13 +22,12 @@ public class UrlDao extends BaseDAO {
     }
 
     public String getLongUrl(String s) throws SQLException {
-        List<String> urls = super.executeQuery(GET_LONG_URL,
-                new Object[] { s }, new RowHandler<String>() {
-                    @Override
-                    public String processRow(ResultSet rs) throws SQLException {
-                        return rs.getString(1);
-                    }
-                });
+        List<String> urls = super.executeQuery(GET_LONG_URL, new Object[] { s }, new RowHandler<String>() {
+            @Override
+            public String processRow(ResultSet rs) throws SQLException {
+                return rs.getString(1);
+            }
+        });
 
         if (urls.size() < 1) {
             return null;
@@ -41,8 +40,7 @@ public class UrlDao extends BaseDAO {
 
     public void setLongUrl(String s, String l) throws SQLException {
         StringBuilder sb = new StringBuilder(l);
-        super.executeInsert(SET_LONG_URL, new Object[] { s,
-            sb.reverse().toString() });
+        super.executeInsert(SET_LONG_URL, new Object[] { s, sb.reverse().toString() });
     }
 
 }

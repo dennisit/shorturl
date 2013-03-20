@@ -17,7 +17,6 @@ public class UserDao extends BaseDAO {
     }
 
     public boolean checkPassword(String user, String pass) throws SQLException {
-        return super.executeQueryCount(CHECK_PASSWORD, new Object[] { user,
-            pass }) >= 1;
+        return super.executeQueryCount(CHECK_PASSWORD, new Object[] { user, pass }) >= 1;
     }
 }

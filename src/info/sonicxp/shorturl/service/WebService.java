@@ -1,9 +1,5 @@
 package info.sonicxp.shorturl.service;
 
-import info.sonicxp.shorturl.dao.DaoFactory;
-import info.sonicxp.shorturl.meta.ShareType;
-import info.sonicxp.shorturl.service.thirdparty.TwitterService;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
@@ -27,6 +23,9 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import twitter4j.TwitterException;
+import info.sonicxp.shorturl.dao.DaoFactory;
+import info.sonicxp.shorturl.meta.ShareType;
+import info.sonicxp.shorturl.service.thirdparty.TwitterService;
 
 /**
  * @author Sonic
@@ -53,7 +52,7 @@ public class WebService extends HttpServlet {
         path = config.getServletContext().getContextPath();
 
         try {
-            for (Method m: WebService.class.getMethods()) {
+            for (Method m : WebService.class.getMethods()) {
                 if (m.isAnnotationPresent(RequestMapping.class)) {
                     String url = m.getAnnotation(RequestMapping.class).value();
                     requestMapping.put((path + url).toLowerCase(), m);
@@ -67,8 +66,7 @@ public class WebService extends HttpServlet {
     }
 
     @Override
-    protected void service(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String uri = req.getRequestURI();
         Method method = requestMapping.get(uri.toLowerCase());
 
@@ -125,8 +123,7 @@ public class WebService extends HttpServlet {
         String share = rw.getParameter("share");
 
         if (orig == null) {
-            return new JSONObject().element("code", 400)
-                    .element("msg", "url can't be null").toString();
+            return new JSONObject().element("code", 400).element("msg", "url can't be null").toString();
         }
 
         try {
@@ -147,8 +144,7 @@ public class WebService extends HttpServlet {
         } catch (SQLException e) {
             // 可能是短Url重复，若自动生成则重试一次，否则返回错误
             if (!genFlag) {
-                return new JSONObject().element("code", 400)
-                        .element("msg", "duplicated short url").toString();
+                return new JSONObject().element("code", 400).element("msg", "duplicated short url").toString();
             } else {
                 sstr = generateRandomUrl();
                 try {
@@ -162,7 +158,7 @@ public class WebService extends HttpServlet {
 
         if (StringUtils.isNotBlank(share)) {
             String[] parts = share.split(",");
-            for (String t: parts) {
+            for (String t : parts) {
                 ShareType type;
                 try {
                     type = ShareType.valueOf(t.trim().toUpperCase());
@@ -173,24 +169,21 @@ public class WebService extends HttpServlet {
                     if (twitterService.checkAuthorized(rw.getUid())) {
                         try {
                             String url = DEFAULT_HOST + path + "/" + sstr;
-                            twitterService.updateStatus(rw.getUid(),
-                                    shareText.format(new Object[] { url }));
+                            twitterService.updateStatus(rw.getUid(), shareText.format(new Object[] { url }));
                             rw.getLogger().info(logger, "Twitter share " + url);
                         } catch (TwitterException e) {
-                            rw.getLogger().error(logger,
-                                    "Update twitter message failed.", e);
+                            rw.getLogger().error(logger, "Update twitter message failed.", e);
                         }
                     }
                 }
             }
         }
-        return new JSONObject().element("code", 200).element("short", sstr)
-                .toString();
+        return new JSONObject().element("code", 200).element("short", sstr).toString();
     }
 
     /**
      * 获取Twitter OAuth URL
-     * 
+     *
      * @param rw
      * @return
      */
@@ -201,21 +194,18 @@ public class WebService extends HttpServlet {
         try {
             type = ShareType.valueOf(typestr.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            return new JSONObject().element("code", 400)
-                    .element("msg", "wrong type").toString();
+            return new JSONObject().element("code", 400).element("msg", "wrong type").toString();
         }
 
         if (type == ShareType.TWITTER) {
             try {
                 String authUrl = twitterService.getAuthorizeUrl(rw.getUid());
-                return new JSONObject().element("code", 200)
-                        .element("url", authUrl).toString();
+                return new JSONObject().element("code", 200).element("url", authUrl).toString();
             } catch (TwitterException e) {
                 return new JSONObject().element("code", 500).toString();
             }
         } else {
-            return new JSONObject().element("code", 501)
-                    .element("msg", "unimplemented").toString();
+            return new JSONObject().element("code", 501).element("msg", "unimplemented").toString();
         }
     }
 
